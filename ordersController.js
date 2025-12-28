@@ -70,7 +70,8 @@ export const getHistoryOrders = async (req, res) => {
     const result = await session.run(
       `
       MATCH (o:CafeOrder)-[r:CONTAINS]->(c:Cafe)
-      ${date ? "WHERE date(o.createdAt) = date($dateString)" : ""}
+      WHERE o.status = "done"
+      ${date ? "AND date(o.createdAt) = date($dateString)" : ""}
       WITH o, collect({
         id: c.id,
         name: c.name,
@@ -78,29 +79,19 @@ export const getHistoryOrders = async (req, res) => {
         price: r.price
       }) AS items
       RETURN o, items
-      ORDER BY o.createdAt DESC
+      ORDER BY o.finishedAt DESC
       `,
       { dateString: date }
     );
 
     const orders = result.records.map(record => {
       const o = record.get("o").properties;
-      const itemsRaw = record.get("items");
       const d = o.createdAt;
-
-      // Convert Neo4j datetime to JavaScript Date
-      const jsDate = new Date(
-        d.year.low,
-        d.month.low - 1,
-        d.day.low,
-        d.hour.low,
-        d.minute.low,
-        d.second.low
-      );
+      const f = o.finishedAt;
 
       return {
         id: o.id,
-        items: itemsRaw.map(it => ({
+        items: items.map(it => ({
           id: it.id?.toNumber ? it.id.toNumber() : it.id,
           name: it.name,
           qty: it.qty.toNumber(),
@@ -108,18 +99,16 @@ export const getHistoryOrders = async (req, res) => {
         })),
         total: o.total.toNumber(),
         status: o.status,
-        createdAt: jsDate,
-        finishedAt: o.finishedAt ? (() => {
-          const f = o.finishedAt;
-          return new Date(
-            f.year.low,
-            f.month.low - 1,
-            f.day.low,
-            f.hour.low,
-            f.minute.low,
-            f.second.low
-          );
-        })() : null
+        createdAt: new Date(
+          d.year.low, d.month.low - 1, d.day.low,
+          d.hour.low, d.minute.low, d.second.low
+        ),
+        finishedAt: f
+          ? new Date(
+              f.year.low, f.month.low - 1, f.day.low,
+              f.hour.low, f.minute.low, f.second.low
+            )
+          : null
       };
     });
 
@@ -255,4 +244,5 @@ export const updateOrder = async (req, res) => {
   } finally {
     await session.close();
   }
+
 };
