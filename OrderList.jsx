@@ -7,7 +7,9 @@ export default function OrderList({ order, onRemove, onEdit, onClearAll }) {
   const [clearAllOpen, setClearAllOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false); // order history modal
   const [orderHistory, setOrderHistory] = useState([]);
-  
+  const [dates, setDates] = useState([]);
+  const [selectedDate, setSelectedDate] = useState("");
+
 
   // Single item remove
   const handleRemoveClick = (id, e) => {
@@ -41,23 +43,43 @@ export default function OrderList({ order, onRemove, onEdit, onClearAll }) {
     setClearAllOpen(false);
   };
 
-  // Fetch order history when modal opens
   useEffect(() => {
-    if (!historyOpen) return;
+  if (!historyOpen) return;
 
-    const fetchOrderHistory = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/orders/history"); // adjust if needed to filter by user
-        const data = await res.json();
-        setOrderHistory(Array.isArray(data) ? data : data.orders || []);
+  const fetchOrderHistory = async () => {
+    try {
+      const url = selectedDate
+        ? `http://localhost:5000/api/orders/history?date=${selectedDate}`
+        : `http://localhost:5000/api/orders/history`;
 
-      } catch (err) {
-        console.error("Error fetching order history:", err);
-      }
-    };
+      const res = await fetch(url);
+      const data = await res.json();
+      setOrderHistory(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error fetching order history:", err);
+    }
+  };
 
-    fetchOrderHistory();
-  }, [historyOpen]);
+  fetchOrderHistory();
+}, [historyOpen, selectedDate]);
+
+  
+  useEffect(() => {
+  if (!historyOpen) return;
+
+  const fetchDates = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/orders/dates");
+      const data = await res.json();
+      setDates(data);
+    } catch (err) {
+      console.error("Error fetching order dates:", err);
+    }
+  };
+
+  fetchDates();
+}, [historyOpen]);
+
 
   return (
     <>
@@ -174,3 +196,4 @@ export default function OrderList({ order, onRemove, onEdit, onClearAll }) {
     </>
   );
 }
+
