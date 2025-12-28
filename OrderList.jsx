@@ -85,6 +85,21 @@ export default function OrderList({ order, onRemove, onEdit, onClearAll }) {
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h2>Order</h2>
+        <select
+  value={selectedDate}
+  onChange={(e) => setSelectedDate(e.target.value)}
+  style={{
+    width: "100%",
+    padding: "6px",
+    marginBottom: "10px"
+  }}
+>
+  <option value="">All dates</option>
+  {dates.map((d) => (
+    <option key={d} value={d}>{d}</option>
+  ))}
+</select>
+
 
         <button
           style={{ padding: "5px 12px", background: "#555", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
@@ -196,4 +211,5 @@ export default function OrderList({ order, onRemove, onEdit, onClearAll }) {
     </>
   );
 }
+
 
