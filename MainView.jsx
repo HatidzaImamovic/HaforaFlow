@@ -20,7 +20,7 @@ export default function MainView() {
 
   return (
     <div className="pageWrap">
-      <DateTime/>
+      <DateTime className={"date-time"}/>
 
       <div id="mainCard">
         <h1>Welcome!</h1>
