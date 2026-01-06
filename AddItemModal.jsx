@@ -1,7 +1,9 @@
 import { useState } from "react";
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function AddItemModal({ view, item = null, onClose, onSaved }) {
+  const { t } = useLanguage();
   const isEdit = Boolean(item);
 
   // Initialize form state: pre-fill if editing
@@ -46,7 +48,7 @@ export default function AddItemModal({ view, item = null, onClose, onSaved }) {
       });
 
       if (!res.ok) {
-        alert("Failed to save item");
+        alert(t("failed_save_item"));
         return;
       }
 
@@ -54,7 +56,7 @@ export default function AddItemModal({ view, item = null, onClose, onSaved }) {
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Error saving item");
+      alert(t("error_save_item"));
     }
   };
 
@@ -64,28 +66,28 @@ export default function AddItemModal({ view, item = null, onClose, onSaved }) {
         <button className="close-btn" onClick={onClose}>✕</button>
 
         <h2>
-          {isEdit ? "Edit" : "Add"}{" "}
-          {view === "cafe" ? "Cafe Item" : "Market Product"}
+          {isEdit ? t("edit") : t("add_item")} {" "}
+          {view === "cafe" ? t("cafe_item") : t("market_product")}
         </h2>
 
         <input
-          placeholder="Name"
+          placeholder={t("field_name")}
           value={form.name || ""}
           onChange={(e) => update("name", e.target.value)}
         />
         <input
-          placeholder="Category"
+          placeholder={t("field_category")}
           value={form.category || ""}
           onChange={(e) => update("category", e.target.value)}
         />
         <input
           type="number"
-          placeholder="Price"
+          placeholder={t("field_price")}
           value={form.price || ""}
           onChange={(e) => update("price", e.target.value)}
         />
         <input
-          placeholder="Image filename"
+          placeholder={t("field_image")}
           value={form.img || ""}
           onChange={(e) => update("img", e.target.value)}
         />
@@ -93,17 +95,17 @@ export default function AddItemModal({ view, item = null, onClose, onSaved }) {
         {view === "market" && (
           <>
             <input
-              placeholder="Producer"
+              placeholder={t("field_producer")}
               value={form.producer || ""}
               onChange={(e) => update("producer", e.target.value)}
             />
             <input
-              placeholder="Barcode"
+              placeholder={t("field_barcode")}
               value={form.barcode || ""}
               onChange={(e) => update("barcode", e.target.value)}
             />
             <textarea
-              placeholder="Details"
+              placeholder={t("field_details")}
               value={form.details || ""}
               onChange={(e) => update("details", e.target.value)}
             />
@@ -111,7 +113,7 @@ export default function AddItemModal({ view, item = null, onClose, onSaved }) {
         )}
 
         <button className="ok-btn" onClick={submit}>
-          {isEdit ? "Save changes" : "Add Item"}
+          {isEdit ? t("save_changes") : t("add_item_button")}
         </button>
       </div>
     </div>
