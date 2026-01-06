@@ -6,9 +6,11 @@ import ItemModal from "../components/ItemModal";
 import MarketOrderList from "../components/MarketOrderList";
 import PaymentMethodModal from "../components/PaymentMethodModal";
 import CashModal from "../components/CashModal";
-import "../App.css";
+import "../css/marketView.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function MarketView() {
+  const { t } = useLanguage();
   const [items, setItems] = useState([]);
   const [category, setCategory] = useState("");
   const [search, setSearch] = useState("");
@@ -78,12 +80,12 @@ export default function MarketView() {
 
       if (!res.ok) throw new Error("Error completing card payment");
 
-      alert("Card payment successful!");
+      alert(t("pay_success_card"));
       setOrder([]);
       setPaymentOpen(false);
     } catch (err) {
       console.error(err);
-      alert("Payment failed.");
+      alert(t("payment_failed"));
     }
   };
 
@@ -103,7 +105,7 @@ export default function MarketView() {
 
       if (!res.ok) throw new Error("Error completing cash payment");
 
-      alert("Cash payment successful!");
+      alert(t("pay_success_cash"));
       setOrder([]);
       setCashOpen(false);
     } catch (err) {
@@ -150,7 +152,7 @@ export default function MarketView() {
 
           <div className="order-bottom">
             <div className="total">
-              Total: BAM {totalPrice}
+              {t("total")} BAM {totalPrice}
             </div>
 
             <button 
@@ -158,7 +160,7 @@ export default function MarketView() {
               onClick={() => setPaymentOpen(true)}
               disabled={order.length === 0}
             >
-              Pay
+              {t("pay")}
             </button>
           </div>
         </div>
@@ -194,7 +196,7 @@ export default function MarketView() {
       )}
 
       <footer className="footer">
-        &copy; {new Date().getFullYear()} HaforaFlow
+        &copy; {new Date().getFullYear()} {t("footer_copyright")}
       </footer>
     </div>
   );
