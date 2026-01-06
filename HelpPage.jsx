@@ -1,9 +1,11 @@
 import { useState } from "react";
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function HelpPage() {
   const [question, setQuestion] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -32,24 +34,22 @@ export default function HelpPage() {
 
   return (
     <div className="help-page" style={{ padding: "20px", maxWidth: "600px", margin: "auto" }}>
-      <h1>Frequently Asked Questions</h1>
-      <p>
-        Here you can find answers to common questions. If you don't find your question below, submit it using the box below.
-      </p>
+      <h1>{t("frequently_faq_title")}</h1>
+      <p>{t("help_intro")}</p>
 
       <div className="faq-section" style={{ margin: "20px 0" }}>
-        <h3>Q: How do I order?</h3>
-        <p>A: Select the product and proceed to checkout.</p>
+        <h3>{t("faq_q1")}</h3>
+        <p>{t("faq_a1")}</p>
 
-        <h3>Q: Can I edit my order?</h3>
-        <p>A: Yes, click on the order and select edit.</p>
+        <h3>{t("faq_q2")}</h3>
+        <p>{t("faq_a2")}</p>
 
         {/* Add more FAQs here */}
       </div>
 
       <form onSubmit={handleSubmit}>
         <label>
-          Ask a question:
+          {t("ask_question_label")}
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -59,11 +59,11 @@ export default function HelpPage() {
         </label>
 
         <button type="submit" style={{ marginTop: "10px" }}>
-          Submit Question
+          {t("submit_question")}
         </button>
       </form>
 
-      {submitted && <p style={{ color: "green", marginTop: "10px" }}>Your question has been sent!</p>}
+      {submitted && <p style={{ color: "green", marginTop: "10px" }}>{t("question_sent")}</p>}
 
       {/* Instructions button */}
       <div style={{ marginTop: "30px", textAlign: "center" }}>
@@ -71,7 +71,7 @@ export default function HelpPage() {
           onClick={() => window.open("/instructions", "_blank")}
           style={{ padding: "10px 20px", fontSize: "16px" }}
         >
-          Instructions
+          {t("instructions")}
         </button>
       </div>
     </div>
