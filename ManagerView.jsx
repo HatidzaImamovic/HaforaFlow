@@ -9,8 +9,10 @@ import AddWorkerModal from "../components/AddWorkerModal";
 import EditWorkerModal from "../components/EditWorkerModal";
 
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function ManagerView() {
+  const { t } = useLanguage();
   // ---------------- STATE ----------------
   const [messages, setMessages] = useState([]);
   const [openMessage, setOpenMessage] = useState(null);
@@ -130,7 +132,7 @@ export default function ManagerView() {
       setItems(prev => prev.filter(i => i.id !== deleteItem.id));
       setDeleteItem(null);
     } catch {
-      alert("Failed to delete item");
+      alert(t("failed_delete_item"));
     }
   };
 
@@ -152,7 +154,7 @@ export default function ManagerView() {
 
       setDeleteWorker(null);
     } catch {
-      alert("Failed to delete worker");
+      alert(t("failed_delete_worker"));
     }
   };
 
@@ -187,7 +189,7 @@ export default function ManagerView() {
         });
       });
     } catch {
-      alert("Failed to hide item");
+      alert(t("failed_hide_item"));
     }
   };
   const handleArchiveWorker = async (worker) => {
@@ -205,7 +207,7 @@ export default function ManagerView() {
       )
     );
   } catch {
-    alert("Failed to archive worker");
+    alert(t("failed_archive_worker"));
   }
 };
 const startResize = () => {
@@ -247,8 +249,8 @@ useEffect(() => {
       <div className="manager-grid">
         {/* LEFT — INBOX */}
         <div className="manager-inbox">
-          <h3>Inbox</h3>
-          {messages.length === 0 && <p className="empty">No messages</p>}
+          <h3>{t("inbox")}</h3>
+          {messages.length === 0 && <p className="empty">{t("no_messages")}</p>}
           {messages.map(msg => (
             <div
               key={msg.id}
@@ -270,7 +272,7 @@ useEffect(() => {
 >
 
             <div className="manager-workers">
-              <h3>Workers</h3>
+              <h3>{t("workers_title")}</h3>
 
               <div className="worker-toggle">
                 <button
@@ -293,7 +295,7 @@ useEffect(() => {
   className={showArchived ? "active" : ""}
   onClick={() => setShowArchived(p => !p)}
 >
-  {showArchived ? "Archived" : "Active"}
+  {showArchived ? t("archived") : t("active")}
 </button>
 
               </div>
@@ -341,13 +343,13 @@ useEffect(() => {
                   className={view === "cafe" ? "active" : ""}
                   onClick={() => setView("cafe")}
                 >
-                  Cafe Items
+                  {t("cafe_items")}
                 </button>
                 <button
                   className={view === "market" ? "active" : ""}
                   onClick={() => setView("market")}
                 >
-                  Market Items
+                  {t("market_items")}
                 </button>
               </div>
             </div>
@@ -435,7 +437,7 @@ useEffect(() => {
         onClose={() => setOpenMessage(null)}
       />
       <footer className="footer">
-        &copy; {new Date().getFullYear()} HaforaFlow
+        &copy; {new Date().getFullYear()} {t("footer_copyright")}
       </footer>
     </div>
     
