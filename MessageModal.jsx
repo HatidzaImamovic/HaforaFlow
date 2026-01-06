@@ -1,6 +1,9 @@
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function MessageModal({ message, onClose }) {
+  const { t } = useLanguage();
+
   if (!message) return null;
 
   const markAsUnread = () => {
@@ -47,7 +50,7 @@ export default function MessageModal({ message, onClose }) {
         <h2>{message.title}</h2>
 
         {message.productName && (
-          <p><strong>Product:</strong> {message.productName}</p>
+          <p><strong>{t("product")}</strong> {message.productName}</p>
         )}
 
         <p className="message-text">{message.text}</p>
@@ -61,14 +64,14 @@ export default function MessageModal({ message, onClose }) {
             className="mark-unread-btn"
             onClick={markAsUnread}
           >
-            Mark as unread
+            {t("mark_as_unread")}
           </button>
           <button
             className="delete-msg-btn"
             onClick={deleteMessage}
             style={{ backgroundColor: "#ff4d4f", color: "#fff" }}
           >
-            Delete
+            {t("delete")}
           </button>
         </div>
       </div>
