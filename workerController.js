@@ -85,13 +85,13 @@ export const createWorker = async (req, res) => {
     const result = await session.run(
       `
       CREATE (w:Worker {
-  id: $id,
-  username: $username,
-  password: $hashedPassword,
-  role: $role,
-  archived: false,
-  createdAt: datetime()
-})
+      id: $id,
+      username: $username,
+      password: $hashedPassword,
+      role: $role,
+      archived: false,
+      createdAt: datetime()
+      })
 
       RETURN w
       `,
