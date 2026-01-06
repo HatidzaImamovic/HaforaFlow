@@ -1,7 +1,9 @@
 import { useState } from "react";
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function EditItemModal({ item, view, onClose, onSaved }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ ...item });
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +60,7 @@ export default function EditItemModal({ item, view, onClose, onSaved }) {
     });
 
     if (!res.ok) {
-      alert("Update failed");
+      alert(t("update_failed"));
       setLoading(false);
       return;
     }
@@ -75,7 +77,7 @@ export default function EditItemModal({ item, view, onClose, onSaved }) {
         {editableFields.map((key) => (
           form[key] !== undefined && (
             <div key={key} className="form-group">
-              <label>{key}</label>
+              <label>{t(`field_${key}`) || key}</label>
               <input
                 name={key}
                 value={form[key] ?? ""}
@@ -86,9 +88,9 @@ export default function EditItemModal({ item, view, onClose, onSaved }) {
         ))}
 
         <div className="modal-actions">
-          <button onClick={onClose}>Cancel</button>
+          <button onClick={onClose}>{t("cancel")}</button>
           <button onClick={handleSave} disabled={loading}>
-            {loading ? "Saving..." : "Save"}
+            {loading ? t("saving") : t("save")}
           </button>
         </div>
       </div>
