@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function ItemModal({
   item,
@@ -8,6 +9,7 @@ export default function ItemModal({
   existingQty,
   view // "market" | "kitchen" | "restaurant"
 }) {
+  const { t } = useLanguage();
   const [qty, setQty] = useState(existingQty || 1);
 
   if (!item) return null;
@@ -22,12 +24,12 @@ export default function ItemModal({
   const msg =
     type === "LOW"
       ? {
-          title: "Low stock",
-          text: `${item.name} is low on stock`,
+          title: t("auto_low_title"),
+          text: t("auto_low_text").replace("{item}", item.name),
         }
       : {
-          title: "Expired product",
-          text: `${item.name} has expired`,
+          title: t("auto_expired_title"),
+          text: t("auto_expired_text").replace("{item}", item.name),
         };
 
   const updated = [
@@ -80,7 +82,7 @@ export default function ItemModal({
           className="ok-btn"
           onClick={() => onConfirm(item, qty)}
         >
-          OK
+          {t("ok")}
         </button>
 
         {/* SUPERMARKET ONLY */}
@@ -90,14 +92,14 @@ export default function ItemModal({
               className="warn-btn"
               onClick={() => sendAutoMessage("LOW")}
             >
-              Low on stock
+              {t("low_on_stock")}
             </button>
 
             <button
               className="danger-btn"
               onClick={() => sendAutoMessage("EXPIRED")}
             >
-              Expired
+              {t("expired")}
             </button>
           </div>
         )}
