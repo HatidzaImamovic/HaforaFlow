@@ -1,18 +1,17 @@
 import express from "express";
-import { 
-  createOrder, 
-  updateOrder, 
-  getPendingOrders, 
-  getHistoryOrders,
-  getOrderDates 
+import {
+  createCafeOrder,
+  getCafeOrderHistory,
+  updateCafeOrderStatus,
+  getCafeOrderDates,
 } from "../controllers/ordersController.js";
 
 const router = express.Router();
 
-router.get("/dates", getOrderDates);
-router.get("/pending", getPendingOrders);
-router.get("/history", getHistoryOrders);
-router.post("/", createOrder);
-router.put("/:id", updateOrder);
+// instead of router.post("/orders", ...) just use:
+router.post("/", createCafeOrder);
+router.get("/history", getCafeOrderHistory);
+router.get("/history/dates", getCafeOrderDates);
+router.patch("/:id/status", updateCafeOrderStatus);
 
 export default router;
