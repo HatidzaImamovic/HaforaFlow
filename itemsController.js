@@ -5,32 +5,33 @@ export const getItems = async (req, res) => {
   const session = driver.session();
 
   try {
-    const result = await session.run(
-      "MATCH (c:Cafe) RETURN c"
-    );
+    const result = await session.run(`
+      MATCH (c:Cafe)
+      RETURN c
+      ORDER BY c.name
+    `);
 
     const items = result.records.map(r => {
-      const n = r.get("c").properties;
+      const node = r.get("c");
 
       return {
-        id: n.id.toString(),
-        name: n.name,
-        category: n.category,
-        price: Number(n.price),
-        image: n.img ?? "",
-        hidden: n.hidden ?? false   // 🔥 IMPORTANT
+        id: node.identity.toInt(),        // ✅ Neo4j internal ID
+        name: node.properties.name,
+        category: node.properties.category,
+        price: Number(node.properties.price),
+        image: node.properties.img ?? "",
+        hidden: node.properties.hidden ?? false
       };
     });
 
     res.json(items);
   } catch (err) {
-    console.error(err);
+    console.error("GET /items error:", err);
     res.status(500).json({ message: "Failed to fetch cafe items" });
   } finally {
     await session.close();
   }
 };
-
 
 /* ---------------- CREATE CAFE ITEM ---------------- */
 export const createCafeItem = async (req, res) => {
@@ -41,7 +42,6 @@ export const createCafeItem = async (req, res) => {
     await session.run(
       `
       CREATE (c:Cafe {
-        id: randomUUID(),
         name: $name,
         category: $category,
         price: toFloat($price),
@@ -53,30 +53,29 @@ export const createCafeItem = async (req, res) => {
         name,
         category,
         price,
-        img: image ?? img
+        img: image ?? img ?? ""
       }
     );
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("CREATE item error:", err);
     res.status(500).json({ message: "Failed to create cafe item" });
   } finally {
     await session.close();
   }
 };
 
-
 /* ---------------- DELETE CAFE ITEM ---------------- */
 export const deleteCafeItem = async (req, res) => {
   const session = driver.session();
-  const id = String(req.params.id);
+  const id = Number(req.params.id);
 
   try {
     const result = await session.run(
       `
       MATCH (c:Cafe)
-      WHERE toString(c.id) = $id
+      WHERE id(c) = $id
       DETACH DELETE c
       RETURN count(c) AS deleted
       `,
@@ -91,7 +90,7 @@ export const deleteCafeItem = async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("DELETE item error:", err);
     res.status(500).json({ error: "Delete failed" });
   } finally {
     await session.close();
@@ -101,15 +100,13 @@ export const deleteCafeItem = async (req, res) => {
 /* ---------------- UPDATE CAFE ITEM ---------------- */
 export const updateCafeItem = async (req, res) => {
   const session = driver.session();
-  const id = String(req.params.id);
-
+  const id = Number(req.params.id);
   const { name, category, price, image, img } = req.body;
 
   const props = {};
-
   if (name !== undefined) props.name = name;
   if (category !== undefined) props.category = category;
-  if (price !== undefined) props.price = Number(price);   // 🔧 FIX
+  if (price !== undefined) props.price = Number(price);
   if (image !== undefined) props.img = image;
   if (img !== undefined) props.img = img;
 
@@ -121,7 +118,7 @@ export const updateCafeItem = async (req, res) => {
     const result = await session.run(
       `
       MATCH (c:Cafe)
-      WHERE toString(c.id) = $id
+      WHERE id(c) = $id
       SET c += $props
       RETURN c
       `,
@@ -132,33 +129,35 @@ export const updateCafeItem = async (req, res) => {
       return res.status(404).json({ error: "Item not found" });
     }
 
-    const n = result.records[0].get("c").properties;
+    const node = result.records[0].get("c");
 
     res.json({
-      id: String(n.id),
-      name: n.name,
-      category: n.category,
-      price: Number(n.price),
-      image: n.img
+      id: node.identity.toInt(),
+      name: node.properties.name,
+      category: node.properties.category,
+      price: Number(node.properties.price),
+      image: node.properties.img ?? "",
+      hidden: node.properties.hidden ?? false
     });
   } catch (err) {
-    console.error("Update cafe item error:", err);
+    console.error("UPDATE item error:", err);
     res.status(500).json({ error: "Update failed" });
   } finally {
     await session.close();
   }
 };
 
+/* ---------------- TOGGLE CAFE ITEM HIDDEN ---------------- */
 export const toggleCafeItemHidden = async (req, res) => {
   const session = driver.session();
-  const id = String(req.params.id);
+  const id = Number(req.params.id);
   const { hidden } = req.body;
 
   try {
     const result = await session.run(
       `
       MATCH (c:Cafe)
-      WHERE toString(c.id) = $id
+      WHERE id(c) = $id
       SET c.hidden = $hidden
       RETURN c
       `,
@@ -171,7 +170,7 @@ export const toggleCafeItemHidden = async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("TOGGLE hidden error:", err);
     res.status(500).json({ error: "Failed to toggle hidden" });
   } finally {
     await session.close();
