@@ -1,7 +1,7 @@
 import "../App.css";
 import { useState, useEffect } from "react";
 
-export default function DateTime() {
+export default function DateTime({className}) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -9,13 +9,12 @@ export default function DateTime() {
     return () => clearInterval(interval);
   }, []);
 
-  const dayName = now.toLocaleDateString(undefined, { weekday: "long" });
   const dateString = now.toLocaleDateString();
   const timeString = now.toLocaleTimeString();
 
   return (
-    <div className="date-time">
-      {dayName}, {dateString} — {timeString}
+    <div className={className}>
+     {dateString} — {timeString}
     </div>
   );
 }
