@@ -1,137 +1,181 @@
 import driver from "../config/neo4j.js";
 
 /* ----------------------------------------------------
-   GET pending orders (kitchen)
+   CREATE CAFE ORDER
 -----------------------------------------------------*/
-export const getPendingOrders = async (req, res) => {
+export const createCafeOrder = async (req, res) => {
   const session = driver.session();
+  const { items, total } = req.body;
 
-  try {
-    const result = await session.run(`
-      MATCH (o:CafeOrder)-[r:CONTAINS]->(c:Cafe)
-      WHERE o.status = "pending"
-      WITH o, collect({
-        id: c.id,
-        name: c.name,
-        qty: r.qty,
-        price: r.price
-      }) AS items
-      RETURN o, items
-      ORDER BY o.createdAt ASC
-    `);
-
-    const orders = result.records.map(record => {
-      const o = record.get("o").properties;
-      const itemsRaw = record.get("items");
-      const d = o.createdAt;
-
-      // Convert Neo4j datetime to JavaScript Date
-      const createdDate = new Date(
-        d.year.low,
-        d.month.low - 1,
-        d.day.low,
-        d.hour.low,
-        d.minute.low,
-        d.second.low
-      );
-
-      return {
-        id: o.id,
-        items: itemsRaw.map(it => ({
-          id: it.id.toNumber ? it.id.toNumber() : it.id,
-          name: it.name,
-          qty: it.qty.toNumber(),
-          price: it.price.toNumber()
-        })),
-        total: o.total.toNumber(),
-        status: o.status,
-        createdAt: createdDate,
-        finishedAt: null
-      };
-    });
-
-    res.json(orders);
-  } catch (err) {
-    console.error("getPendingOrders error:", err);
-    res.status(500).json({ error: "Failed to fetch pending orders" });
-  } finally {
-    await session.close();
+  if (!items || items.length === 0) {
+    return res.status(400).json({ error: "Items required" });
   }
-};
-
-/* ----------------------------------------------------
-   GET order history with optional date filter
------------------------------------------------------*/
-export const getHistoryOrders = async (req, res) => {
-  const session = driver.session();
-  const { date } = req.query;
 
   try {
-    const result = await session.run(
+    await session.run(
       `
-      MATCH (o:CafeOrder)-[r:CONTAINS]->(c:Cafe)
-      WHERE o.status = "done"
-      ${date ? "AND date(o.createdAt) = date($dateString)" : ""}
-      WITH o, collect({
-        id: c.id,
-        name: c.name,
-        qty: r.qty,
-        price: r.price
-      }) AS items
-      RETURN o, items
-      ORDER BY o.finishedAt DESC
+      CREATE (c:CafeOrder {
+        id: randomUUID(),
+        total: toFloat($total),
+        status: "pending",
+        createdAt: datetime(),
+        finishedAt: NULL
+      })
+      WITH c
+      UNWIND $items AS it
+      CREATE (c)-[:CONTAINS {qty: toInteger(it.qty), price: toFloat(it.price)}]->(p:Item {id: toInteger(it.id), name: it.name})
+      RETURN c
       `,
-      { dateString: date }
+      { items, total }
     );
 
-    const orders = result.records.map(record => {
-      const o = record.get("o").properties;
-      const d = o.createdAt;
-      const f = o.finishedAt;
-
-      return {
-        id: o.id,
-        items: items.map(it => ({
-          id: it.id?.toNumber ? it.id.toNumber() : it.id,
-          name: it.name,
-          qty: it.qty.toNumber(),
-          price: it.price.toNumber()
-        })),
-        total: o.total.toNumber(),
-        status: o.status,
-        createdAt: new Date(
-          d.year.low, d.month.low - 1, d.day.low,
-          d.hour.low, d.minute.low, d.second.low
-        ),
-        finishedAt: f
-          ? new Date(
-              f.year.low, f.month.low - 1, f.day.low,
-              f.hour.low, f.minute.low, f.second.low
-            )
-          : null
-      };
-    });
-
-    res.json(orders);
+    res.json({ success: true });
   } catch (err) {
-    console.error("getHistoryOrders error:", err);
-    res.status(500).json({ error: "Failed to fetch order history" });
+    console.error("createCafeOrder error:", err);
+    res.status(500).json({ message: "Failed to create cafe order" });
   } finally {
     await session.close();
   }
 };
 
 /* ----------------------------------------------------
-   GET available order dates for calendar
+   GET CAFE ORDER HISTORY
+   (pending first, then done)
 -----------------------------------------------------*/
-export const getOrderDates = async (req, res) => {
+export const getCafeOrderHistory = async (req, res) => {
+  const session = driver.session();
+  const { date, status } = req.query; // status = pending | done
+
+  try {
+    let whereClauses = [];
+    let params = {};
+
+    if (date) {
+      whereClauses.push("date(c.createdAt) = date($date)");
+      params.date = date;
+    }
+
+    if (status) {
+      whereClauses.push("c.status = $status");
+      params.status = status;
+    }
+
+    const whereString =
+      whereClauses.length > 0
+        ? "WHERE " + whereClauses.join(" AND ")
+        : "";
+
+    const query = `
+      MATCH (c:CafeOrder)-[r:CONTAINS]->(p:Item)
+      ${whereString}
+      RETURN
+        c,
+        collect({
+          name: p.name,
+          qty: r.qty,
+          price: r.price
+        }) AS items
+      ORDER BY
+        CASE c.status WHEN "pending" THEN 0 ELSE 1 END,
+        c.createdAt ASC
+    `;
+
+    const result = await session.run(query, params);
+
+    const history = result.records.map((record) => {
+      const o = record.get("c").properties;
+
+      const createdAt = new Date(
+        o.createdAt.year.low,
+        o.createdAt.month.low - 1,
+        o.createdAt.day.low,
+        o.createdAt.hour.low,
+        o.createdAt.minute.low,
+        o.createdAt.second.low
+      );
+
+      const finishedAt = o.finishedAt
+        ? new Date(
+            o.finishedAt.year.low,
+            o.finishedAt.month.low - 1,
+            o.finishedAt.day.low,
+            o.finishedAt.hour.low,
+            o.finishedAt.minute.low,
+            o.finishedAt.second.low
+          )
+        : null;
+
+      return {
+        id: o.id,
+        total: Number(o.total),
+        status: o.status,
+        createdAt,
+        finishedAt,
+        items: record.get("items").map((i) => ({
+          name: i.name,
+          qty: Number(i.qty),
+          price: Number(i.price),
+        })),
+      };
+    });
+
+    res.json(history);
+  } catch (err) {
+    console.error("getCafeOrderHistory error:", err);
+    res.status(500).json({ message: "Failed to fetch cafe order history" });
+  } finally {
+    await session.close();
+  }
+};
+
+/* ----------------------------------------------------
+   UPDATE CAFE ORDER STATUS
+-----------------------------------------------------*/
+export const updateCafeOrderStatus = async (req, res) => {
+  const session = driver.session();
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status || (status !== "pending" && status !== "done")) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  try {
+    const finishedAt = status === "done" ? "datetime()" : "NULL";
+
+    const result = await session.run(
+      `
+      MATCH (c:CafeOrder {id: $id})
+      SET c.status = $status, c.finishedAt = ${finishedAt}
+      RETURN c
+      `,
+      { id, status }
+    );
+
+    if (!result.records.length) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("updateCafeOrderStatus error:", err);
+    res.status(500).json({ message: "Failed to update status" });
+  } finally {
+    await session.close();
+  }
+};
+
+/* ----------------------------------------------------
+   GET AVAILABLE DATES (for history filter)
+-----------------------------------------------------*/
+export const getCafeOrderDates = async (req, res) => {
   const session = driver.session();
 
   try {
     const result = await session.run(
       `
-      MATCH (o:CafeOrder)
-      RETURN DISTINCT date(o.createdAt) AS d
+      MATCH (c:CafeOrder)
+      RETURN DISTINCT date(c.createdAt) AS d
       ORDER BY d DESC
       `
     );
@@ -143,106 +187,9 @@ export const getOrderDates = async (req, res) => {
 
     res.json(dates);
   } catch (err) {
-    console.error("getOrderDates error:", err);
+    console.error("getCafeOrderDates error:", err);
     res.status(500).json({ message: "Failed to fetch dates" });
   } finally {
     await session.close();
   }
-};
-
-/* ----------------------------------------------------
-   CREATE order (from cafe)
------------------------------------------------------*/
-export const createOrder = async (req, res) => {
-  const session = driver.session();
-  const { items, total } = req.body;
-
-  if (!items || items.length === 0) {
-    return res.status(400).json({ error: "Items required" });
-  }
-
-  try {
-    const result = await session.run(
-      `
-      CREATE (o:CafeOrder {
-        id: randomUUID(),
-        total: toFloat($total),
-        status: "pending",
-        createdAt: datetime(),
-        finishedAt: NULL
-      })
-      WITH o
-      UNWIND $items AS it
-      MATCH (c:Cafe { id: toInteger(it.id) })
-      CREATE (o)-[:CONTAINS {
-        qty: toInteger(it.qty),
-        price: toFloat(it.price)
-      }]->(c)
-      RETURN o
-      `,
-      { items, total }
-    );
-
-    const o = result.records[0].get("o").properties;
-
-    res.status(201).json({
-      id: o.id,
-      items,
-      total: Number(o.total),
-      status: o.status,
-      createdAt: o.createdAt,
-      finishedAt: null
-    });
-  } catch (err) {
-    console.error("createOrder error:", err);
-    res.status(500).json({ error: "Failed to create order" });
-  } finally {
-    await session.close();
-  }
-};
-
-/* ----------------------------------------------------
-   UPDATE order status (kitchen)
------------------------------------------------------*/
-export const updateOrder = async (req, res) => {
-  const session = driver.session();
-  const { id } = req.params;
-  const { status } = req.body;
-
-  if (!status || (status !== "pending" && status !== "done")) {
-    return res.status(400).json({ error: "Invalid status" });
-  }
-
-  try {
-    const result = await session.run(
-      `
-      MATCH (o:CafeOrder { id: $id })
-      SET o.status = $status,
-          o.finishedAt = CASE
-            WHEN $status = "done" THEN datetime()
-            ELSE NULL
-          END
-      RETURN o
-      `,
-      { id, status }
-    );
-
-    if (!result.records.length) {
-      return res.status(404).json({ error: "Order not found" });
-    }
-
-    const o = result.records[0].get("o").properties;
-
-    res.json({
-      id: o.id,
-      status: o.status,
-      finishedAt: o.finishedAt ?? null
-    });
-  } catch (err) {
-    console.error("updateOrder error:", err);
-    res.status(500).json({ error: "Failed to update order" });
-  } finally {
-    await session.close();
-  }
-
 };
