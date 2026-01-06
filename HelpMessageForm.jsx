@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function HelpMessageForm() {
+  const { t } = useLanguage();
   const [text, setText] = useState("");
 
   const sendHelp = () => {
@@ -12,7 +14,7 @@ export default function HelpMessageForm() {
     existing.unshift({
       id: Date.now(),
       type: "HELP",
-      title: "Help request",
+      title: t("help_request_title"),
       text,
       sender: "Worker",
       read: false,
@@ -25,13 +27,13 @@ export default function HelpMessageForm() {
 
   return (
     <>
-      <h3>Help</h3>
+      <h3>{t("help")}</h3>
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
-        placeholder="Write message to manager..."
+        placeholder={t("write_message_placeholder")}
       />
-      <button onClick={sendHelp}>Send</button>
+      <button onClick={sendHelp}>{t("send")}</button>
     </>
   );
 }
