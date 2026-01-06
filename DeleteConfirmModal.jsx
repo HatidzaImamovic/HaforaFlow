@@ -1,19 +1,22 @@
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function DeleteConfirmModal({
   item,
   onCancel,
   onConfirm
 }) {
+  const { t } = useLanguage();
+
   if (!item) return null;
 
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <h3>Delete item</h3>
+        <h3>{t("delete_item_title")}</h3>
 
         <p>
-          Are you sure you want to delete{" "}
+          {t("delete_item_confirm")} {" "}
           <strong>{item.name}</strong>?
         </p>
 
@@ -25,14 +28,14 @@ export default function DeleteConfirmModal({
             marginTop: "20px",
           }}
         >
-          <button onClick={onCancel}>Cancel</button>
+          <button onClick={onCancel}>{t("cancel")}</button>
 
           <button
             className="danger-btn"
             onClick={onConfirm}
 
           >
-            OK
+            {t("ok")}
           </button>
         </div>
       </div>
