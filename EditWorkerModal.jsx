@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function EditWorkerModal({ worker, onClose, onSaved }) {
+  const { t } = useLanguage();
   const [username, setUsername] = useState(worker.username);
   const [password, setPassword] = useState(worker.password);
   const [newPassword, setNewPassword] = useState(null);
@@ -48,33 +50,33 @@ export default function EditWorkerModal({ worker, onClose, onSaved }) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>Edit Worker</h3>
+        <h3>{t("edit_worker")}</h3>
 
-        <label>Username</label>
+        <label>{t("field_username")}</label>
         <input
           value={username}
           onChange={e => setUsername(e.target.value)}
         />
 
-        <label>Current Password</label>
+        <label>{t("current_password")}</label>
         <input value={password} disabled />
 
         {newPassword && (
           <>
-            <label>New Password</label>
+            <label>{t("new_password")}</label>
             <input value={newPassword} disabled />
           </>
         )}
 
         <div className="modal-actions">
           <button onClick={generatePassword}>
-            Generate New Password
+            {t("generate_new_password")}
           </button>
         </div>
 
         <div className="modal-actions">
-          <button onClick={onClose}>Cancel</button>
-          <button onClick={handleSave}>Save Changes</button>
+          <button onClick={onClose}>{t("cancel")}</button>
+          <button onClick={handleSave}>{t("save_changes")}</button>
         </div>
       </div>
     </div>
