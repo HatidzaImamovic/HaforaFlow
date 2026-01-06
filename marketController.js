@@ -171,16 +171,16 @@ export const createMarketItem = async (req, res) => {
     await session.run(
       `
       CREATE (p:Product {
-  id: toInteger(timestamp()),
-  name: $name,
-  price: toFloat($price),
-  producer: $producer,
-  category: $category,
-  details: $details,
-  img: $img,
-  barcode: $barcode,
-  hidden: false
-})
+      id: toInteger(timestamp()),
+      name: $name,
+      price: toFloat($price),
+      producer: $producer,
+      category: $category,
+      details: $details,
+      img: $img,
+      barcode: $barcode,
+      hidden: false
+      })
 
       `,
       { name, price, producer, category, details, img, barcode }
