@@ -1,4 +1,5 @@
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function ItemCard({
   item,
@@ -10,8 +11,11 @@ export default function ItemCard({
 }) {
   const isWorker = !!item.role;
 
-  // Decide image based on worker role
+  /* -----------------------------------
+     Decide which image NAME or PATH
+  ----------------------------------- */
   const getImage = () => {
+    // Workers
     if (isWorker) {
       switch (item.role) {
         case "market":
@@ -25,48 +29,84 @@ export default function ItemCard({
       }
     }
 
+    // Normal items / orders
     return item.image || item.img || "placeholder.png";
   };
+
+  /* -----------------------------------
+     Build FINAL src safely
+  ----------------------------------- */
+  const getImageSrc = () => {
+    const img = getImage();
+
+    // imported image or absolute path
+    if (typeof img === "string" && (img.startsWith("/") || img.includes("://"))) {
+      return img;
+    }
+
+    // imported image module (Vite/Webpack)
+    if (typeof img === "object" && img?.default) {
+      return img.default;
+    }
+
+    // public/images fallback
+    return `/images/${img}`;
+  };
+
+  const { lang, t } = useLanguage();
+  const displayName = lang === "bhs" && item.name_bhs ? item.name_bhs : item.name;
 
   return (
     <div
       className="item-card"
-      onClick={!manager && onClick ? () => onClick(item) : undefined}
+      onClick={!manager && onClick ? onClick : undefined}
       style={{ cursor: manager ? "default" : "pointer" }}
     >
-      <img src={`/images/${getImage()}`} alt={item.name} />
+      <img
+  src={getImageSrc()}
+  alt={displayName}
+  loading="lazy"
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = "/images/placeholder.png";
+  }}
+/>
 
-      <h3>{item.name}</h3>
 
-      {/* ITEM PRICE (only for products) */}
-      {!isWorker && item.price !== undefined && (
+      <h3>{displayName}</h3>
+
+      {/* Price only for products */}
+      {!isWorker && typeof item.price === "number" && (
         <p>BAM {item.price.toFixed(2)}</p>
       )}
 
+      {/* Manager buttons */}
       {manager && (
         <div className="manager-card-buttons">
-          <button
-            className="delete-btn"
-            onClick={() => onDelete(item)}
-          >
-            Delete
-          </button>
-          {isWorker && !item.archived && onArchive && (
-  <button
-    className="archive-btn"
-    onClick={() => onArchive(item)}
-  >
-    Archive
-  </button>
-)}
+          {onDelete && (
+            <button
+              className="delete-btn"
+              onClick={() => onDelete(item)}
+            >
+              {t("delete")}
+            </button>
+          )}
 
-          {/* 🔥 Hide ONLY for cafe/market items */}
+          {isWorker && !item.archived && onArchive && (
+            <button
+              className="archive-btn"
+              onClick={() => onArchive(item)}
+            >
+              {t("archive")}
+            </button>
+          )}
+
           {!isWorker && onHide && (
             <button
               className="hide-btn"
               onClick={() => onHide(item)}
             >
-              {item.hidden ? "Unhide" : "Hide"}
+              {item.hidden ? t("unhide") : t("hide")}
             </button>
           )}
         </div>
