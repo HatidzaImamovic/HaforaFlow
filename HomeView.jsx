@@ -1,21 +1,84 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "../App.css";
+import "../css/homePage.css";
+import { useLanguage } from "../contexts/LanguageContext";
+import LanguageToggle from "../components/LanguageToggle";
 
 export default function HomeView() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [usernameError, setUsernameError] = useState(false); // for red border only
-  const [passwordError, setPasswordError] = useState("");    // shared error text
+  const [usernameError, setUsernameError] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [darkMode, setDarkMode] = useState(
+  document.body.classList.contains("dark")
+);
+
+
+
   const navigate = useNavigate();
+  const { t, translateMessage } = useLanguage();
+
+  /* ================= IDLE TIMER ================= */
+  const idleTimer = useRef(null);
+  const IDLE_TIME = 2 * 60 * 1000; // ⏱ 2 minutes (change if needed)
+
+  const resetIdleTimer = () => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+
+    idleTimer.current = setTimeout(() => {
+      navigate("/"); // 👈 go back to welcome page
+    }, IDLE_TIME);
+  };
+
+  useEffect(() => {
+    const events = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+    ];
+
+    events.forEach(event =>
+      window.addEventListener(event, resetIdleTimer)
+    );
+
+    resetIdleTimer(); // start timer immediately
+
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      events.forEach(event =>
+        window.removeEventListener(event, resetIdleTimer)
+      );
+    };
+  }, []);
+  /* ============================================== */
+  useEffect(() => {
+  const isDark = document.body.classList.contains("dark");
+  setDarkMode(isDark);
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("theme", darkMode ? "dark" : "light");
+}, [darkMode]);
+
+useEffect(() => {
+  const saved = localStorage.getItem("theme");
+  if (saved === "dark") {
+    document.body.classList.add("dark");
+    setDarkMode(true);
+  }
+}, []);
+
+
 
   const login = async () => {
-    // Clear previous errors
     setUsernameError(false);
     setPasswordError("");
 
     if (!username || !password) {
-      setPasswordError("Please fill in both fields");
+      setPasswordError(t("fill_both"));
       if (!username) setUsernameError(true);
       return;
     }
@@ -30,62 +93,118 @@ export default function HomeView() {
       const data = await res.json();
 
       if (res.ok && data.token) {
-        if(data.role === "admin") navigate("/main"); // successful login
+        if (data.role === "admin") navigate("/main");
         if (data.role === "cafe") navigate("/cafe");
         if (data.role === "kitchen") navigate("/kitchen");
         if (data.role === "market") navigate("/market");
         if (data.role === "manager") navigate("/manager");
       } else {
-        // Highlight fields based on error
         if (data.message === "User not found") {
-          setUsernameError(true);     // mark username red
+          setUsernameError(true);
         } else if (data.message === "Invalid password") {
           setUsernameError(false);
         }
-        setPasswordError(data.message); // show message under password field
+        setPasswordError(translateMessage(data.message) || data.message);
       }
     } catch (err) {
       console.error(err);
-      setPasswordError("Server error");
+      setPasswordError(t("server_error"));
     }
   };
 
+  const toggleTheme = () => {
+  setDarkMode(prev => {
+    const next = !prev;
+
+    if (next) {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.remove("dark");
+    }
+
+    return next;
+  });
+};
+
+
+
   return (
     <div className="pageWrap">
-      <button
-  onClick={() => {
-    window.open("/help", "_blank");
-  }}
+
+    <a
+  href="/help"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="help-btn"
 >
-  Help
+  {t("help")}
+</a>
+
+
+    <button
+  className={`light-dark ${darkMode ? "is-dark" : "is-light"}`}
+  onClick={toggleTheme}
+>
+  <img
+    src={darkMode ? "/night-mode.png" : "/brightness.png"}
+    alt={t("toggle_theme")}
+  />
 </button>
-      <div id="loginPage">
-        <img src="..\haforaFlowLogo.png" alt="HaforaFlow Logo" />
-        <h2>Log In</h2>
 
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className={usernameError ? "inputError" : ""}
-        />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={passwordError ? "inputError" : ""}
-        />
-        {passwordError && <div className="errorMessage">{passwordError}</div>}
+    <LanguageToggle />
 
-        <button onClick={login}>Login</button>
-      </div>
+  <div id="loginPage">
+    <img
+  src={darkMode ? "/haforaFlowLogoDM.png" : "/haforaFlowLogo.png"}
+  alt="HaforaFlow Logo"
+  className={`login-logo ${darkMode ? "logo-dark" : "logo-light"}`}
+/>
 
-      <footer className="footer">
-        &copy; {new Date().getFullYear()} HaforaFlow
-      </footer>
-    </div>
+
+    <h2>{t("log_in")}</h2>
+
+    <input
+      type="text"
+      placeholder={t("username")}
+      value={username}
+      onChange={(e) => setUsername(e.target.value)}
+      className={usernameError ? "inputError" : ""}
+    />
+
+    <div className="password-wrapper">
+  <input
+    type={showPassword ? "text" : "password"}
+    placeholder={t("password")}
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    className={passwordError ? "inputError" : ""}
+  />
+
+
+  <span
+    className="toggle-password"
+    onClick={() => setShowPassword(!showPassword)}
+  >
+    <img
+  src={showPassword ? "/hide.png" : "/view.png"}
+  alt={t("toggle_theme")}
+/>
+  </span>
+</div>
+
+
+    {passwordError && (
+      <div className="errorMessage">{passwordError}</div>
+    )}
+
+    <button onClick={login}>{t("login_button")}</button>
+  </div>
+
+  <footer className="footer">
+    &copy; {new Date().getFullYear()} {t("footer_copyright")}
+  </footer>
+</div>
+
   );
 }
