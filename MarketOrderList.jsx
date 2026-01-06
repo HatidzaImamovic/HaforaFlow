@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import "../App.css";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function MarketOrderList({ order, onRemove, onEdit, onClearAll }) {
+  const { t } = useLanguage();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [clearAllOpen, setClearAllOpen] = useState(false);
@@ -93,7 +95,7 @@ const [calendarOpen, setCalendarOpen] = useState(false);
     <>
       {/* HEADER BUTTONS */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h2>Purchases</h2>
+        <h2>{t("purchase_title")}</h2>
 
         <button
           style={{
@@ -110,7 +112,7 @@ const [calendarOpen, setCalendarOpen] = useState(false);
 }}
 
         >
-          Purchase History
+          {t("purchase_history")}
         </button>
 
         <button
@@ -124,7 +126,7 @@ const [calendarOpen, setCalendarOpen] = useState(false);
           }}
           onClick={handleClearAll}
         >
-          Clear All
+          {t("clear_all")}
         </button>
       </div>
 
@@ -150,16 +152,16 @@ const [calendarOpen, setCalendarOpen] = useState(false);
       {confirmOpen && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ width: "250px" }}>
-            <p>Remove this item?</p>
+            <p>{t("remove_item_confirm")}</p>
             <div style={{ display: "flex", justifyContent: "space-around", marginTop: "15px" }}>
               <button
                 onClick={handleConfirm}
                 style={{ background: "red", color: "white", padding: "5px 12px", borderRadius: "4px" }}
               >
-                Yes
+                {t("yes")}
               </button>
               <button onClick={handleCancel} style={{ padding: "5px 12px", borderRadius: "4px" }}>
-                No
+                {t("no")}
               </button>
             </div>
           </div>
@@ -172,16 +174,16 @@ const [calendarOpen, setCalendarOpen] = useState(false);
       {clearAllOpen && (
         <div className="modal-overlay">
           <div className="modal-box" style={{ width: "280px" }}>
-            <p>Are you sure you want to clear order?</p>
+            <p>{t("clear_order_confirm")}</p>
             <div style={{ display: "flex", justifyContent: "space-around", marginTop: "15px" }}>
               <button
                 onClick={handleConfirmClearAll}
                 style={{ background: "red", color: "white", padding: "5px 12px", borderRadius: "4px" }}
               >
-                Yes
+                {t("yes")}
               </button>
               <button onClick={handleCancelClearAll} style={{ padding: "5px 12px", borderRadius: "4px" }}>
-                No
+                {t("no")}
               </button>
             </div>
           </div>
@@ -199,7 +201,7 @@ const [calendarOpen, setCalendarOpen] = useState(false);
     >
       <button className="close-btn" onClick={() => setHistoryOpen(false)}>×</button>
 
-      <h2>Purchase History</h2>
+      <h2>{t("purchase_history")}</h2>
 
       {/* DATE PICKER BUTTON */}
       <label><strong>Select Date:</strong></label>
@@ -251,10 +253,10 @@ const [calendarOpen, setCalendarOpen] = useState(false);
       )}
 
       <p style={{ marginBottom: "15px" }}>
-        <strong>Total Sales for {selectedDate || todayDate}:</strong> BAM {dailyTotal}
+        <strong>{t("total_sales_for")} {selectedDate || todayDate}:</strong> BAM {dailyTotal}
       </p>
 
-      {orderHistory.length === 0 && <p>No purchases found.</p>}
+      {orderHistory.length === 0 && <p>{t("no_purchases_found")}</p>}
 
       {orderHistory.map((o) => (
         <div
@@ -274,7 +276,7 @@ const [calendarOpen, setCalendarOpen] = useState(false);
             ))}
           </div>
 
-          <p><strong>Total:</strong> BAM {o.total.toFixed(2)}</p>
+          <p><strong>{t("total")}</strong> BAM {o.total.toFixed(2)}</p>
 
           <p style={{ fontSize: "0.8em", color: "#666" }}>
             {new Date(o.date).toLocaleString()}
