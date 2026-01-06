@@ -1,13 +1,15 @@
 import { useState } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export default function AddWorkerModal({ onClose, onCreated }) {
+  const { t } = useLanguage();
   const [role, setRole] = useState("market");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async () => {
     if (!email) {
-      alert("Please enter worker email");
+      alert(t("please_enter_worker_email"));
       return;
     }
 
@@ -22,7 +24,7 @@ export default function AddWorkerModal({ onClose, onCreated }) {
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || "Failed to create worker");
+        throw new Error(err.message || t("failed_create_worker"));
       }
 
       const data = await res.json();
@@ -38,11 +40,11 @@ export default function AddWorkerModal({ onClose, onCreated }) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h3>Create Worker</h3>
+        <h3>{t("create_worker")}</h3>
 
         <input
           type="email"
-          placeholder="Worker email"
+          placeholder={t("worker_email_placeholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
@@ -51,17 +53,17 @@ export default function AddWorkerModal({ onClose, onCreated }) {
           value={role}
           onChange={(e) => setRole(e.target.value)}
         >
-          <option value="market">Supermarket</option>
-          <option value="cafe">Restaurant</option>
-          <option value="kitchen">Kitchen</option>
+          <option value="market">{t("role_supermarket")}</option>
+          <option value="cafe">{t("role_restaurant")}</option>
+          <option value="kitchen">{t("role_kitchen")}</option>
         </select>
 
         <div className="modal-actions">
           <button onClick={onClose} disabled={loading}>
-            Cancel
+            {t("cancel")}
           </button>
           <button onClick={handleCreate} disabled={loading}>
-            {loading ? "Creating..." : "Create"}
+            {loading ? t("creating") : t("create")}
           </button>
         </div>
       </div>
